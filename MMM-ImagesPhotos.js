@@ -57,7 +57,6 @@ Module.register(ourModuleName, {
         const photosData = await photosResponse.json();
         self.processPhotos(photosData);
       } else if (photosResponse.status === 401) {
-        self.updateDom(self.config.animationSpeed);
         Log.error(self.name, photosResponse.status);
         retry = false;
       } else {
@@ -90,9 +89,133 @@ Module.register(ourModuleName, {
       // Clear timer value for resume
       self.timer = null;
       if (self.suspended === false) {
-        self.updateDom(self.config.animationSpeed);
+        self.updateImage();
       }
     }, this.config.updateInterval);
+  },
+
+  updateImage() {
+    // Get next image
+    const photoImage = this.randomPhoto();
+    if (!photoImage) return;
+
+    if (this.fullscreen) {
+      // Handle fullscreen mode update
+      this.updateFullscreenImage(photoImage);
+    } else {
+      // Handle non-fullscreen mode update
+      this.updateNonFullscreenImage(photoImage);
+    }
+  },
+
+  updateNonFullscreenImage(photoImage) {
+    // Find the existing div with the image
+    const existingImageDiv = document.getElementById("mmm-images-photos");
+    if (existingImageDiv) {
+      // Create a new temp image to preload
+      const tempImage = new Image();
+      tempImage.onload = () => {
+        // Fade out current image
+        existingImageDiv.style.opacity = 0;
+        
+        // After fade out, update the background image
+        setTimeout(() => {
+          existingImageDiv.style.backgroundImage = `url(${photoImage.url})`;
+          // Fade in new image
+          existingImageDiv.style.opacity = this.config.opacity;
+        }, this.config.animationSpeed);
+      };
+      
+      // Handle image load error
+      tempImage.onerror = () => {
+        Log.error(`Image load failed: ${photoImage.url}`);
+        // Try another image
+        setTimeout(() => this.updateImage(), 1000);
+      };
+      
+      // Start loading the image
+      tempImage.src = photoImage.url;
+    } else {
+      // Fallback to updateDom if the element doesn't exist
+      this.updateDom(this.config.animationSpeed);
+    }
+  },
+
+  updateFullscreenImage(photoImage) {
+    // Make sure the wrapper exists
+    if (!this.fg) {
+      this.updateDom(this.config.animationSpeed);
+      return;
+    }
+    
+    // Create a new image object to preload the image
+    const tempImage = new Image();
+
+    // Set error handler for the image load
+    tempImage.onerror = () => {
+      Log.error(`Image load failed: ${photoImage.url}`);
+      // Try another image
+      setTimeout(() => this.updateImage(), 1000);
+    };
+
+    // Set onload handler for the image
+    tempImage.onload = () => {
+      const m = window
+        .getComputedStyle(document.body, null)
+        .getPropertyValue("margin-top");
+        
+      // Calculate dimensions
+      const w = tempImage.width;
+      const h = tempImage.height;
+      const tw = document.body.clientWidth + parseInt(m, 10) * 2;
+      const th = document.body.clientHeight + parseInt(m, 10) * 2;
+
+      // Compute the new size and offsets
+      const result = this.scaleImage(w, h, tw, th, true);
+
+      // Create a div for displaying the image
+      const imageDiv = document.createElement("div");
+      imageDiv.style.position = "relative";
+      imageDiv.style.left = `${result.targetleft}px`;
+      imageDiv.style.top = `${result.targettop}px`;
+      imageDiv.style.width = `${result.width}px`;
+      imageDiv.style.height = `${result.height}px`;
+      imageDiv.style.backgroundImage = `url(${photoImage.url})`;
+      imageDiv.style.backgroundSize = 'cover';
+      imageDiv.style.backgroundPosition = 'center';
+      imageDiv.style.backgroundRepeat = 'no-repeat';
+      
+      // Initially invisible
+      imageDiv.style.opacity = 0;
+      imageDiv.style.transition = `opacity ${this.config.animationSpeed / 1000}s`;
+
+      // Append the div to the container
+      this.fg.appendChild(imageDiv);
+
+      // After a short delay, fade in the new image
+      setTimeout(() => {
+        imageDiv.style.opacity = this.config.opacity;
+        
+        // When new image is visible, remove old images
+        setTimeout(() => {
+          // Remove old images if there are any
+          while (this.fg.children.length > 1) {
+            this.fg.removeChild(this.fg.firstChild);
+          }
+        }, this.config.animationSpeed);
+      }, 50);
+
+      // Update background if fill is enabled
+      if (this.config.fill === true) {
+        this.bk.style.backgroundImage = `url(${photoImage.url})`;
+      }
+      
+      // Restart the timer
+      this.startTimer();
+    };
+    
+    // Start loading the image
+    tempImage.src = photoImage.url;
   },
 
   socketNotificationReceived(notification, payload, source) {
@@ -233,6 +356,7 @@ Module.register(ourModuleName, {
       imageDiv.style.opacity = self.config.opacity;
       imageDiv.className = "bgimage";
       imageDiv.style.backgroundImage = `url(${photoImage.url})`;
+      imageDiv.style.transition = `opacity ${self.config.animationSpeed / 1000}s`;
       wrapper.appendChild(imageDiv);
       self.startTimer();
     }
@@ -346,8 +470,12 @@ Module.register(ourModuleName, {
     this.photos = data;
     if (this.loaded === false) {
       if (this.suspended === false) {
+        // First time loading needs DOM creation
         self.updateDom(self.config.animationSpeed);
       }
+    } else if (this.suspended === false) {
+      // For subsequent loads, just update the image directly
+      self.updateImage();
     }
     this.loaded = true;
   }
