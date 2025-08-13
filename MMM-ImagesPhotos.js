@@ -111,19 +111,34 @@ Module.register(ourModuleName, {
   updateNonFullscreenImage(photoImage) {
     // Find the existing div with the image
     const existingImageDiv = document.getElementById("mmm-images-photos");
-    if (existingImageDiv) {
+    if (existingImageDiv && existingImageDiv.parentNode) {
       // Create a new temp image to preload
       const tempImage = new Image();
       tempImage.onload = () => {
-        // Fade out current image
-        existingImageDiv.style.opacity = 0;
+        // Create a new div for the new image
+        const newImageDiv = document.createElement("div");
+        newImageDiv.id = "mmm-images-photos-new";
+        newImageDiv.style.maxWidth = this.config.maxWidth;
+        newImageDiv.style.maxHeight = this.config.maxHeight;
+        newImageDiv.style.opacity = 0;  // Start invisible
+        newImageDiv.className = "bgimage";
+        newImageDiv.style.backgroundImage = `url(${photoImage.url})`;
+        newImageDiv.style.transition = `opacity ${this.config.animationSpeed / 1000}s`;
         
-        // After fade out, update the background image
+        // Insert the new div before the existing one
+        existingImageDiv.parentNode.insertBefore(newImageDiv, existingImageDiv);
+        
+        // Fade in new image and fade out old image simultaneously
         setTimeout(() => {
-          existingImageDiv.style.backgroundImage = `url(${photoImage.url})`;
-          // Fade in new image
-          existingImageDiv.style.opacity = this.config.opacity;
-        }, this.config.animationSpeed);
+          newImageDiv.style.opacity = this.config.opacity;
+          existingImageDiv.style.opacity = 0;
+          
+          // After transition completes, remove the old div and update the ID of the new one
+          setTimeout(() => {
+            existingImageDiv.parentNode.removeChild(existingImageDiv);
+            newImageDiv.id = "mmm-images-photos";
+          }, this.config.animationSpeed);
+        }, 50);
       };
       
       // Handle image load error
@@ -189,8 +204,12 @@ Module.register(ourModuleName, {
       imageDiv.style.opacity = 0;
       imageDiv.style.transition = `opacity ${this.config.animationSpeed / 1000}s`;
 
-      // Append the div to the container
-      this.fg.appendChild(imageDiv);
+      // Insert the new div at the beginning of the container (before old images)
+      if (this.fg.firstChild) {
+        this.fg.insertBefore(imageDiv, this.fg.firstChild);
+      } else {
+        this.fg.appendChild(imageDiv);
+      }
 
       // After a short delay, fade in the new image
       setTimeout(() => {
@@ -198,9 +217,9 @@ Module.register(ourModuleName, {
         
         // When new image is visible, remove old images
         setTimeout(() => {
-          // Remove old images if there are any
+          // Remove old images, but keep the first one (which is our new image)
           while (this.fg.children.length > 1) {
-            this.fg.removeChild(this.fg.firstChild);
+            this.fg.removeChild(this.fg.lastChild);
           }
         }, this.config.animationSpeed);
       }, 50);
@@ -400,7 +419,7 @@ Module.register(ourModuleName, {
         // Set error handler for the image load
         tempImage.onerror = () => {
           Log.error(`image load failed=${tempImage.src}`);
-          this.updateDom();
+          this.updateImage();
         };
 
         // Set onload handler for the image
