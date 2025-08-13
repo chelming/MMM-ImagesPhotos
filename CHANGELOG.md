@@ -7,6 +7,7 @@
 - Improve image loading and error handling
 - Implement in-place image updates without recreating DOM elements (smoother transitions)
 - Enhanced transition effect by inserting new images before old ones
+- Further improved transitions by implementing a fade-in-then-fade-out sequence
 
 ## [0.2.0] - 2023-12-19
 
