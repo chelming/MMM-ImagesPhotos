@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.3.0] - 2025-08-13
+
+- Replace img tags with divs using background images for better performance and smoother transitions
+- Update CSS for both fullscreen and non-fullscreen modes to support background images
+- Improve image loading and error handling
+
 ## [0.2.0] - 2023-12-19
 
 - Add support for nested image folders, and support for sequential image vs random

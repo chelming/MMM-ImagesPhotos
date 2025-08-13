@@ -226,14 +226,14 @@ Module.register(ourModuleName, {
     const photoImage = this.randomPhoto();
 
     if (photoImage) {
-      const img = document.createElement("img");
-      img.src = photoImage.url;
-      img.id = "mmm-images-photos";
-      img.style.maxWidth = this.config.maxWidth;
-      img.style.maxHeight = this.config.maxHeight;
-      img.style.opacity = self.config.opacity;
-      img.className = "bgimage";
-      wrapper.appendChild(img);
+      const imageDiv = document.createElement("div");
+      imageDiv.id = "mmm-images-photos";
+      imageDiv.style.maxWidth = this.config.maxWidth;
+      imageDiv.style.maxHeight = this.config.maxHeight;
+      imageDiv.style.opacity = self.config.opacity;
+      imageDiv.className = "bgimage";
+      imageDiv.style.backgroundImage = `url(${photoImage.url})`;
+      wrapper.appendChild(imageDiv);
       self.startTimer();
     }
     return wrapper;
@@ -244,7 +244,6 @@ Module.register(ourModuleName, {
     // If wrapper div not yet created
     if (this.wrapper === null) {
       // Create it once, try to reduce image flash on change
-
       this.wrapper = document.createElement("div");
       this.bk = document.createElement("div");
       this.bk.className = "bgimagefs";
@@ -269,82 +268,67 @@ Module.register(ourModuleName, {
       this.fg.style.margin = "0px";
 
       const photoImage = this.randomPhoto();
-      let img = null;
       if (photoImage) {
-        // Create img tag element
-        img = document.createElement("img");
+        // Create a new image object to preload the image
+        const tempImage = new Image();
+        tempImage.src = photoImage.url;
 
-        // Set default position, corrected in onload handler
-        img.style.left = `${0}px`;
-        img.style.top = document.body.clientHeight + parseInt(m, 10) * 2;
-        img.style.position = "relative";
+        // Set error handler for the image load
+        tempImage.onerror = () => {
+          Log.error(`image load failed=${tempImage.src}`);
+          this.updateDom();
+        };
 
-        img.src = photoImage.url;
-        // Make invisible
-        img.style.opacity = 0;
-        // Append this image to the div
-        this.fg.appendChild(img);
+        // Set onload handler for the image
+        tempImage.onload = () => {
+          Log.log(`image loaded=${tempImage.src} size=${tempImage.width}:${tempImage.height}`);
 
-        /* set the image load error handler
-           report the image load failed
-           go load the next one with no delay
-        */   
-        img.onerror = (evt) => {
-          const eventImage = evt.currentTarget;
-          Log.error(
-            `image load failed=${eventImage.src}`
-          );
-          this.updateDom()
-        }
-        /*
-         * Set the onload event handler
-         * The loadurl request will happen when the html is returned to MM and inserted into the dom.
-         */
-        img.onload = (evt) => {
-          // Get the image of the event
-          const eventImage = evt.currentTarget;
-          Log.log(
-            `image loaded=${eventImage.src} size=${eventImage.width}:${eventImage.height}`
-          );
-
-          // What's the size of this image and it's parent
-          const w = eventImage.width;
-          const h = eventImage.height;
+          // What's the size of this image and its parent
+          const w = tempImage.width;
+          const h = tempImage.height;
           const tw = document.body.clientWidth + parseInt(m, 10) * 2;
           const th = document.body.clientHeight + parseInt(m, 10) * 2;
 
           // Compute the new size and offsets
           const result = self.scaleImage(w, h, tw, th, true);
 
-          // Adjust the image size
-          eventImage.width = result.width;
-          eventImage.height = result.height;
+          // Create a div for displaying the image
+          const imageDiv = document.createElement("div");
+          imageDiv.style.position = "relative";
+          imageDiv.style.left = `${result.targetleft}px`;
+          imageDiv.style.top = `${result.targettop}px`;
+          imageDiv.style.width = `${result.width}px`;
+          imageDiv.style.height = `${result.height}px`;
+          imageDiv.style.backgroundImage = `url(${photoImage.url})`;
+          imageDiv.style.backgroundSize = 'cover';
+          imageDiv.style.backgroundPosition = 'center';
+          imageDiv.style.backgroundRepeat = 'no-repeat';
+          
+          // Initially invisible
+          imageDiv.style.opacity = 0;
 
-          Log.log(`image setting size to ${result.width}:${result.height}`);
-          Log.log(
-            `image setting top to ${result.targetleft}:${result.targettop}`
-          );
+          // Append the div to the container
+          this.fg.appendChild(imageDiv);
 
-          // Adjust the image position
-          eventImage.style.left = `${result.targetleft}px`;
-          eventImage.style.top = `${result.targettop}px`;
-
-          // If another image was already displayed
+          // If another image div was already displayed
           const c = self.fg.childElementCount;
           if (c > 1) {
             for (let i = 0; i < c - 1; i++) {
               // Hide it
               self.fg.firstChild.style.opacity = 0;
               self.fg.firstChild.style.backgroundColor = "rgba(0,0,0,0)";
-              // Remove the image element from the div
+              // Remove the div element
               self.fg.removeChild(self.fg.firstChild);
             }
           }
-          self.fg.firstChild.style.opacity = self.config.opacity;
 
+          // Make current div visible with the configured opacity
+          self.fg.firstChild.style.opacity = self.config.opacity;
           self.fg.firstChild.style.transition = "opacity 1.25s";
+
+          // Set background image for the background div if fill is enabled
           if (self.config.fill === true) {
-            self.bk.style.backgroundImage = `url(${self.fg.firstChild.src})`;
+            self.bk.style.backgroundImage = `url(${photoImage.url})`;
           }
           self.startTimer();
         };

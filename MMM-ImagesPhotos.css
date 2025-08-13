@@ -6,7 +6,6 @@
 /* when full screen */
 .bgimagefs {
   /* Center and scale the image nicely */
-
   position: absolute;
   background-position: center;
   background-repeat: no-repeat;
@@ -17,4 +16,9 @@
 
 /* not fullscreen */
 .bgimage {
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  height: 100%;
+  width: 100%;
 }
