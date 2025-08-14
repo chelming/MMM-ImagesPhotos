@@ -461,12 +461,10 @@ Module.register(ourModuleName, {
           // Append the div to the container
           this.fg.appendChild(imageDiv);
 
+
           // Add transition effect
           //c imageDiv.style.transition = `opacity ${self.config.animationSpeed / 1000}s`;
-                const prevImage = self.fg.firstChild;
-                prevImage.style.opacity = 1;
-                prevImage.style.transition = `opacity ${self.config.animationSpeed / 1000}s`;
-                prevImage.style.backgroundColor = "rgba(0,0,0,0)";
+
           // If another image div was already displayed
           const c = self.fg.childElementCount;
           if (c > 1) {
