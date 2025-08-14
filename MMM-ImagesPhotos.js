@@ -467,14 +467,14 @@ Module.register(ourModuleName, {
           // If another image div was already displayed
           const c = self.fg.childElementCount;
           if (c > 1) {
-            prevImage.style.transition = `opacity ${self.config.animationSpeed / 1000}s`;
 
             // Wait for the new image to be visible
             setTimeout(() => {
               // Then fade out previous images
               for (let i = 0; i < c - 1; i++) {
                 const prevImage = self.fg.firstChild;
-                //c prevImage.style.opacity = 0;
+                prevImage.style.opacity = 1;
+                prevImage.style.transition = `opacity ${self.config.animationSpeed / 1000}s`;
                 prevImage.style.backgroundColor = "rgba(0,0,0,0)";
               }
               
