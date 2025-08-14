@@ -474,7 +474,7 @@ Module.register(ourModuleName, {
               // Then fade out previous images
               for (let i = 0; i < c - 1; i++) {
                 const prevImage = self.fg.firstChild;
-                prevImage.style.opacity = 1;
+                prevImage.style.opacity = 0;
                 prevImage.style.transition = `opacity ${self.config.animationSpeed / 1000}s`;
                 prevImage.style.backgroundColor = "rgba(0,0,0,0)";
               }
