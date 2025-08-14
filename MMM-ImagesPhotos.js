@@ -457,13 +457,14 @@ Module.register(ourModuleName, {
           imageDiv.style.backgroundSize = 'cover';
           imageDiv.style.backgroundPosition = 'center';
           imageDiv.style.backgroundRepeat = 'no-repeat';
+          imageDiv.style.opacity = 1;
 
           // Append the div to the container
           this.fg.appendChild(imageDiv);
 
 
           // Add transition effect
-          //c imageDiv.style.transition = `opacity ${self.config.animationSpeed / 1000}s`;
+          imageDiv.style.transition = `opacity ${self.config.animationSpeed / 1000}s`;
 
           // If another image div was already displayed
           const c = self.fg.childElementCount;
@@ -475,7 +476,6 @@ Module.register(ourModuleName, {
               for (let i = 0; i < c - 1; i++) {
                 const prevImage = self.fg.firstChild;
                 prevImage.style.opacity = 0;
-                prevImage.style.transition = `opacity ${self.config.animationSpeed / 1000}s`;
                 prevImage.style.backgroundColor = "rgba(0,0,0,0)";
               }
               
