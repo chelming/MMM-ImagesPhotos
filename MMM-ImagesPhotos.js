@@ -473,11 +473,12 @@ Module.register(ourModuleName, {
             // Wait for the new image to be visible
             setTimeout(() => {
               // Then fade out previous images
-              for (let i = 0; i < c - 1; i++) {
                 const prevImage = self.fg.firstChild;
-                prevImage.style.opacity = 0;
+                prevImage.style.transition = `opacity ${self.config.animationSpeed / 1000}s`;
+                setTimeout(() => {
+                  prevImage.style.opacity = 0;
+                }, 10);
                 prevImage.style.backgroundColor = "rgba(0,0,0,0)";
-              }
               
               // Wait for fade-out to complete before removing
               setTimeout(() => {
