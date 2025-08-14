@@ -208,7 +208,7 @@ Module.register(ourModuleName, {
       imageDiv.style.opacity = 1;
       imageDiv.style.transition = `opacity ${this.config.animationSpeed / 1000}s`;
 
-      // Insert the new div at the beginning of the container (before old images)
+      // Insert the new div at the end of the container (before old images)
      this.fg.appendChild(imageDiv);
 
 
@@ -222,7 +222,7 @@ Module.register(ourModuleName, {
           setTimeout(() => {
             // Now fade out all other images
             for (let i = 1; i < this.fg.children.length; i++) {
-              this.fg.children[i].style.opacity = 0;
+              this.fg.firstChild.style.opacity = 0;
             }
             
             // Wait for fade-out transition to complete before removing old images
