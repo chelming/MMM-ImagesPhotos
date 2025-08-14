@@ -206,7 +206,7 @@ Module.register(ourModuleName, {
       
       // Initially invisible
       imageDiv.style.opacity = 1;
-      imageDiv.style.transition = `opacity ${this.config.animationSpeed / 1000}s`;
+      //imageDiv.style.transition = `opacity ${this.config.animationSpeed / 1000}s`;
 
       // Insert the new div at the end of the container (before old images)
      this.fg.appendChild(imageDiv);
