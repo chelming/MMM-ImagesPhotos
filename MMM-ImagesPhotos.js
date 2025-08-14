@@ -457,9 +457,6 @@ Module.register(ourModuleName, {
           imageDiv.style.backgroundSize = 'cover';
           imageDiv.style.backgroundPosition = 'center';
           imageDiv.style.backgroundRepeat = 'no-repeat';
-          
-          // Initially invisible
-          //c imageDiv.style.opacity = 0;
 
           // Append the div to the container
           this.fg.appendChild(imageDiv);
@@ -470,15 +467,14 @@ Module.register(ourModuleName, {
           // If another image div was already displayed
           const c = self.fg.childElementCount;
           if (c > 1) {
-            // Make new image visible with configured opacity
-            //c imageDiv.style.opacity = self.config.opacity;
             
             // Wait for the new image to be visible
             setTimeout(() => {
               // Then fade out previous images
               for (let i = 0; i < c - 1; i++) {
-                const prevImage = self.fg.children[i+1];
+                const prevImage = self.fg.firstChild;
                 //c prevImage.style.opacity = 0;
+                prevImage.style.transition = `opacity ${self.config.animationSpeed / 1000}s`;
                 prevImage.style.backgroundColor = "rgba(0,0,0,0)";
               }
               
@@ -486,7 +482,7 @@ Module.register(ourModuleName, {
               setTimeout(() => {
                 // Remove old div elements but keep the new one
                 while (self.fg.childElementCount > 1) {
-                  self.fg.removeChild(self.fg.lastChild);
+                  self.fg.removeChild(self.fg.firstChild);
                 }
               }, self.config.animationSpeed);
             }, self.config.animationSpeed);
