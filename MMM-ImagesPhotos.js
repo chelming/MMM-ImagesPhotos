@@ -11,7 +11,7 @@ const ourModuleName = "MMM-ImagesPhotos";
 
 Module.register(ourModuleName, {
   defaults: {
-    opacity: 0.9,
+    opacity: 1,
     animationSpeed: 500,
     updateInterval: 5000,
     getInterval: 60000,
