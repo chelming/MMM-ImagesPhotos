@@ -406,33 +406,33 @@ Module.register(ourModuleName, {
     if (this.wrapper === null) {
       // Create it once, try to reduce image flash on change
       this.wrapper = document.createElement("div");
+      this.wrapper.style.backgroundColor = "#000"; // Set background color to match your theme
+      
       this.bk = document.createElement("div");
       this.bk.className = "bgimagefs";
+      this.bk.style.display = "none"; // Hide background blur div
       if (this.config.fill === true) {
         this.bk.style.filter = `blur(${this.config.blur}px)`;
         this.bk.style["-webkit-filter"] = `blur(${this.config.blur}px)`;
-      } else {
-        this.bk.style.backgroundColor = this.config.backgroundColor;
       }
       this.wrapper.appendChild(this.bk);
+      
       this.fg = document.createElement("div");
+      this.fg.style.border = "none";
+      this.fg.style.margin = "0px";
       this.wrapper.appendChild(this.fg);
     }
+    
     if (this.photos.length) {
       // Get the size of the margin, if any, we want to be full screen
       const m = window
         .getComputedStyle(document.body, null)
         .getPropertyValue("margin-top");
-      // Set the style for the containing div
-
-      this.fg.style.border = "none";
-      this.fg.style.margin = "0px";
 
       const photoImage = this.randomPhoto();
       if (photoImage) {
         // Create a new image object to preload the image
         const tempImage = new Image();
-        tempImage.src = photoImage.url;
 
         // Set error handler for the image load
         tempImage.onerror = () => {
@@ -464,43 +464,56 @@ Module.register(ourModuleName, {
           imageDiv.style.backgroundSize = 'cover';
           imageDiv.style.backgroundPosition = 'center';
           imageDiv.style.backgroundRepeat = 'no-repeat';
-          imageDiv.style.transition = `opacity ${self.config.animationSpeed / 1000}s`;
-          imageDiv.style.opacity = 0; // Start with opacity 0
           
-          // Set background image for the background div if fill is enabled
-          if (self.config.fill === true) {
-            self.bk.style.backgroundImage = `url(${photoImage.url})`;
-          }
-          
-          // Add to the container - make sure it's added at the END
+          // IMPORTANT: Don't set transition or opacity yet
+          // Add to container without being visible
           self.fg.appendChild(imageDiv);
           
-          // Fade in the new image
+          // CRITICAL FIX: Wait a moment for the browser to process the new element
+          // then configure the transition and opacity
           setTimeout(() => {
-            imageDiv.style.opacity = self.config.opacity;
+            // Now set up the transition
+            imageDiv.style.transition = `opacity ${self.config.animationSpeed / 1000}s`;
+            imageDiv.style.opacity = 0;
             
-            // If another image div was already displayed before this one
-            if (self.fg.childElementCount > 1) {
-              // Wait for the new image to be fully visible
+            // Force a reflow before changing opacity
+            void imageDiv.offsetWidth;
+            
+            // Now set the opacity and trigger the fade-in
+            setTimeout(() => {
+              imageDiv.style.opacity = self.config.opacity;
+              
+              // Only after new image is FULLY visible, start fading out old ones
               setTimeout(() => {
-                // Then fade out all previous images
-                for (let i = 0; i < self.fg.childElementCount - 1; i++) {
-                  const prevImage = self.fg.children[i];
-                  prevImage.style.opacity = 0;
+                // Handle previous images only if they exist
+                if (self.fg.childElementCount > 1) {
+                  // Fade out all previous images (all but the last one we added)
+                  for (let i = 0; i < self.fg.childElementCount - 1; i++) {
+                    self.fg.children[i].style.opacity = 0;
+                  }
+                  
+                  // Only remove old images after they're fully faded out
+                  setTimeout(() => {
+                    while (self.fg.childElementCount > 1) {
+                      self.fg.removeChild(self.fg.firstChild);
+                    }
+                  }, self.config.animationSpeed + 50);
                 }
                 
-                // Remove old images after fade completes
-                setTimeout(() => {
-                  while (self.fg.childElementCount > 1) {
-                    self.fg.removeChild(self.fg.firstChild);
-                  }
-                }, self.config.animationSpeed);
-              }, self.config.animationSpeed);
-            }
-            
-            self.startTimer();
+                // Set background if needed
+                if (self.config.fill === true) {
+                  self.bk.style.backgroundImage = `url(${photoImage.url})`;
+                }
+                
+                // Start timer for next update
+                self.startTimer();
+              }, self.config.animationSpeed + 100); // Wait extra time to ensure full visibility
+            }, 50);
           }, 50);
         };
+        
+        // Start loading the image
+        tempImage.src = photoImage.url;
       }
     }
     return this.wrapper;
