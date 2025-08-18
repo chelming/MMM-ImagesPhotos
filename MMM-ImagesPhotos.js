@@ -406,7 +406,7 @@ Module.register(ourModuleName, {
     if (this.wrapper === null) {
       // Create it once, try to reduce image flash on change
       this.wrapper = document.createElement("div");
-      this.wrapper.style.backgroundColor = "#000"; // Set background color to match your theme
+      this.wrapper.style.backgroundColor = "#000";
       
       this.bk = document.createElement("div");
       this.bk.className = "bgimagefs";
@@ -420,6 +420,7 @@ Module.register(ourModuleName, {
       this.fg = document.createElement("div");
       this.fg.style.border = "none";
       this.fg.style.margin = "0px";
+      this.fg.style.position = "relative"; // Make this a positioning context
       this.wrapper.appendChild(this.fg);
     }
     
@@ -455,7 +456,7 @@ Module.register(ourModuleName, {
 
           // Create a div for displaying the image
           const imageDiv = document.createElement("div");
-          imageDiv.style.position = "relative";
+          imageDiv.style.position = "absolute"; // Use absolute positioning
           imageDiv.style.left = `${result.targetleft}px`;
           imageDiv.style.top = `${result.targettop}px`;
           imageDiv.style.width = `${result.width}px`;
@@ -464,51 +465,50 @@ Module.register(ourModuleName, {
           imageDiv.style.backgroundSize = 'cover';
           imageDiv.style.backgroundPosition = 'center';
           imageDiv.style.backgroundRepeat = 'no-repeat';
+          imageDiv.style.transition = `opacity ${self.config.animationSpeed / 1000}s`;
           
-          // IMPORTANT: Don't set transition or opacity yet
-          // Add to container without being visible
+          // Critical fix: Set z-index higher than any existing images
+          const highestZIndex = Array.from(self.fg.children)
+            .reduce((max, el) => Math.max(max, parseInt(el.style.zIndex || 0, 10)), 0);
+          imageDiv.style.zIndex = (highestZIndex + 1).toString();
+          
+          // Start with opacity 0
+          imageDiv.style.opacity = 0;
+          
+          // Add to container
           self.fg.appendChild(imageDiv);
           
-          // CRITICAL FIX: Wait a moment for the browser to process the new element
-          // then configure the transition and opacity
+          // Force a reflow
+          void imageDiv.offsetWidth;
+          
+          // Fade in the new image
           setTimeout(() => {
-            // Now set up the transition
-            imageDiv.style.transition = `opacity ${self.config.animationSpeed / 1000}s`;
-            imageDiv.style.opacity = 0;
+            imageDiv.style.opacity = self.config.opacity;
             
-            // Force a reflow before changing opacity
-            void imageDiv.offsetWidth;
-            
-            // Now set the opacity and trigger the fade-in
+            // After new image is fully visible, fade out all others
             setTimeout(() => {
-              imageDiv.style.opacity = self.config.opacity;
+              // Fade out all previous images
+              Array.from(self.fg.children)
+                .filter(el => el !== imageDiv)
+                .forEach(el => {
+                  el.style.opacity = 0;
+                });
               
-              // Only after new image is FULLY visible, start fading out old ones
+              // Remove old images after fade out
               setTimeout(() => {
-                // Handle previous images only if they exist
-                if (self.fg.childElementCount > 1) {
-                  // Fade out all previous images (all but the last one we added)
-                  for (let i = 0; i < self.fg.childElementCount - 1; i++) {
-                    self.fg.children[i].style.opacity = 0;
-                  }
-                  
-                  // Only remove old images after they're fully faded out
-                  setTimeout(() => {
-                    while (self.fg.childElementCount > 1) {
-                      self.fg.removeChild(self.fg.firstChild);
-                    }
-                  }, self.config.animationSpeed + 50);
-                }
+                Array.from(self.fg.children)
+                  .filter(el => el !== imageDiv)
+                  .forEach(el => self.fg.removeChild(el));
                 
-                // Set background if needed
+                // Update background if needed
                 if (self.config.fill === true) {
                   self.bk.style.backgroundImage = `url(${photoImage.url})`;
                 }
                 
                 // Start timer for next update
                 self.startTimer();
-              }, self.config.animationSpeed + 100); // Wait extra time to ensure full visibility
-            }, 50);
+              }, self.config.animationSpeed + 50);
+            }, self.config.animationSpeed + 100);
           }, 50);
         };
         
