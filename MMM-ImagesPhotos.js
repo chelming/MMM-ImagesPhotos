@@ -202,47 +202,43 @@ Module.register(ourModuleName, {
       imageDiv.style.backgroundSize = 'cover';
       imageDiv.style.backgroundPosition = 'center';
       imageDiv.style.backgroundRepeat = 'no-repeat';
-    
+      imageDiv.style.transition = `opacity ${this.config.animationSpeed / 1000}s`;
+      imageDiv.style.opacity = 0; // Start invisible
       
-      // Initially invisible
-      imageDiv.style.opacity = 1;
-      //imageDiv.style.transition = `opacity ${this.config.animationSpeed / 1000}s`;
-
-      // Insert the new div at the end of the container (before old images)
-     this.fg.appendChild(imageDiv);
-
-
-      // After a short delay, fade in the new image
-      setTimeout(() => {
-        //c imageDiv.style.opacity = this.config.opacity;
-        
-        // Only fade out the old image (second child) after the new one is visible
-        if (this.fg.children.length > 1) {
-          // Give new image some time to become fully visible
-          setTimeout(() => {
-            // Now fade out all other images
-            for (let i = 1; i < this.fg.children.length; i++) {
-              this.fg.firstChild.style.opacity = 0;
-            }
-            
-            // Wait for fade-out transition to complete before removing old images
-            setTimeout(() => {
-              // Remove old images, but keep the first one (which is our new image)
-              while (this.fg.children.length > 1) {
-                this.fg.removeChild(this.fg.firstChild);
-              }
-            }, this.config.animationSpeed);
-          }, this.config.animationSpeed / 2); // Wait half the transition time before starting fade out
-        }
-      }, 50);
-
       // Update background if fill is enabled
       if (this.config.fill === true) {
         this.bk.style.backgroundImage = `url(${photoImage.url})`;
       }
-      
-      // Restart the timer
-      this.startTimer();
+
+      // Insert the new div at the beginning of the container
+      if (this.fg.firstChild) {
+        this.fg.insertBefore(imageDiv, this.fg.firstChild);
+      } else {
+        this.fg.appendChild(imageDiv);
+      }
+
+      // Make the new image visible first
+      setTimeout(() => {
+        imageDiv.style.opacity = this.config.opacity;
+        
+        // Only start fading out old images after new one is visible
+        setTimeout(() => {
+          // Fade out all other images
+          for (let i = 1; i < this.fg.children.length; i++) {
+            this.fg.children[i].style.opacity = 0;
+          }
+          
+          // Wait for fade-out transition to complete before removing old images
+          setTimeout(() => {
+            // Remove old images
+            while (this.fg.children.length > 1) {
+              this.fg.removeChild(this.fg.lastChild);
+            }
+            // Restart the timer
+            this.startTimer();
+          }, this.config.animationSpeed);
+        }, this.config.animationSpeed); // Wait for new image to be fully visible
+      }, 50);
     };
     
     // Start loading the image
@@ -491,7 +487,7 @@ Module.register(ourModuleName, {
             }, self.config.animationSpeed);
           } else {
             // Make current div visible with the configured opacity
-            //c imageDiv.style.opacity = self.config.opacity;
+            //c imageDiv.style.opacity = self.configtransi.opacity;
           }
 
           // Set background image for the background div if fill is enabled
